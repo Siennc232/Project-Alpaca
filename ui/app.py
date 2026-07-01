@@ -158,13 +158,17 @@ with tab_live:
         with col_a:
             st.subheader("Recent signals")
             sig = engine.storage.recent_signals(30)
-            st.dataframe(sig, use_container_width=True, hide_index=True) if not sig.empty \
-                else st.caption("No signals recorded yet.")
+            if not sig.empty:
+                st.dataframe(sig, use_container_width=True, hide_index=True)
+            else:
+                st.caption("No signals recorded yet.")
         with col_b:
             st.subheader("Recent orders")
             orders = engine.storage.recent_orders(30)
-            st.dataframe(orders, use_container_width=True, hide_index=True) if not orders.empty \
-                else st.caption("No orders recorded yet.")
+            if not orders.empty:
+                st.dataframe(orders, use_container_width=True, hide_index=True)
+            else:
+                st.caption("No orders recorded yet.")
 
         st.subheader("Equity curve")
         eq = engine.storage.equity_curve()
