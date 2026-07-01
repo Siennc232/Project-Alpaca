@@ -63,6 +63,14 @@ class TradingEngine:
         pos_qty = {s: d["qty"] for s, d in positions.items()}
         gross = sum(abs(d["qty"]) * d["price"] for d in positions.values())
 
+        # Symbols with a live order: skip them so we never stack duplicate
+        # orders (Alpaca rejects those as "potential wash trade").
+        try:
+            open_order_symbols = self.client.get_open_order_symbols()
+        except Exception:
+            open_order_symbols = set()
+        summary["market_open"] = self.client.is_market_open()
+
         for symbol in self.universe:
             df = history.get(symbol)
             if df is None or df.empty:
@@ -71,6 +79,11 @@ class TradingEngine:
             # Persist the latest bar for the record.
             self.storage.save_bars(symbol, df.tail(1))
             last_price = float(df["close"].iloc[-1])
+
+            # Skip anything that already has a pending order this bar.
+            if symbol in open_order_symbols:
+                summary.setdefault("skipped", []).append(symbol)
+                continue
 
             # 1) stop-loss / take-profit on any open position
             if symbol in positions and positions[symbol]["qty"] != 0:

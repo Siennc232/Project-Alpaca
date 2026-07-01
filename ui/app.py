@@ -113,13 +113,31 @@ with tab_live:
             c1.metric("Status", "🔴 Disconnected")
             st.error(f"Could not reach Alpaca: {exc}")
 
+        # ---- market status banner
+        if connected:
+            try:
+                clock = engine.client.trading.get_clock()
+                if clock.is_open:
+                    st.success("🟢 Market is OPEN — orders can fill.")
+                else:
+                    st.info(f"🌙 Market is CLOSED — orders will queue until the next open "
+                            f"({clock.next_open:%Y-%m-%d %H:%M %Z}). Equity won't move until fills happen.")
+            except Exception:
+                pass
+
         # ---- controls
-        b1, b2, b3, _ = st.columns([1, 1, 1, 3])
+        b1, b2, b3, b4 = st.columns([1, 1, 1, 1])
         if b1.button("▶ Start", use_container_width=True):
             st.session_state.running = True
         if b2.button("⏹ Stop", use_container_width=True):
             st.session_state.running = False
         step_now = b3.button("⏭ Run one step", use_container_width=True)
+        if b4.button("🗑 Cancel open orders", use_container_width=True):
+            try:
+                engine.client.cancel_all_orders()
+                st.success("Cancelled all open orders.")
+            except Exception as exc:
+                st.error(f"Cancel failed: {exc}")
 
         st.caption(f"Engine state: {'🟢 RUNNING' if st.session_state.running else '⚪ stopped'} "
                    f"· strategy: {engine.strategy.describe()}")
@@ -128,8 +146,12 @@ with tab_live:
             with st.spinner("Running a trading cycle..."):
                 try:
                     summary = engine.step()
-                    st.success(f"Cycle complete — {len(summary['orders'])} orders, "
-                               f"{len(summary['exits'])} risk exits.")
+                    skipped = summary.get("skipped", [])
+                    msg = (f"Cycle complete — {len(summary['orders'])} orders, "
+                           f"{len(summary['exits'])} risk exits.")
+                    if skipped:
+                        msg += f" Skipped {len(skipped)} with pending orders: {', '.join(skipped)}."
+                    st.success(msg)
                 except Exception as exc:
                     st.error(f"Cycle failed: {exc}")
 

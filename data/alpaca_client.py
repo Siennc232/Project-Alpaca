@@ -13,7 +13,7 @@ from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest, StockLatestQuoteRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 from alpaca.trading.client import TradingClient
-from alpaca.trading.enums import OrderSide, OrderType, TimeInForce
+from alpaca.trading.enums import OrderSide, OrderType, QueryOrderStatus, TimeInForce
 from alpaca.trading.requests import (
     GetOrdersRequest,
     LimitOrderRequest,
@@ -95,12 +95,30 @@ class AlpacaClient:
         )
         return self.trading.submit_order(order_data=req)
 
+    _ORDER_STATUS_MAP = {
+        "all": QueryOrderStatus.ALL,
+        "open": QueryOrderStatus.OPEN,
+        "closed": QueryOrderStatus.CLOSED,
+    }
+
     def get_orders(self, status: str = "all", limit: int = 50) -> List[Any]:
-        req = GetOrdersRequest(status=status, limit=limit)
+        req = GetOrdersRequest(
+            status=self._ORDER_STATUS_MAP.get(status, QueryOrderStatus.ALL), limit=limit
+        )
         return self.trading.get_orders(filter=req)
+
+    def get_open_order_symbols(self) -> set:
+        """Symbols that currently have a live (open/pending) order."""
+        return {o.symbol for o in self.get_orders(status="open", limit=200)}
 
     def cancel_all_orders(self) -> Any:
         return self.trading.cancel_orders()
+
+    def is_market_open(self) -> bool:
+        try:
+            return bool(self.trading.get_clock().is_open)
+        except Exception:
+            return False
 
     # ---------------------------------------------------------------- marketdata
     def get_bars(self, symbols: List[str], timeframe: str, start, end=None):
