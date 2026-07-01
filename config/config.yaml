@@ -1,0 +1,55 @@
+# =====================================================================
+# Central configuration for the Alpaca systematic trading system.
+# API credentials are NOT here — they are read from .env (see loader.py).
+# =====================================================================
+
+# Runtime mode: "backtest" (historical) or "paper" (live paper account)
+mode: paper
+
+alpaca:
+  paper: true   # always true for this project — no real-money trading
+
+# Universe of tradable assets (liquid large-caps + SPY ETF)
+universe:
+  - AAPL
+  - MSFT
+  - GOOGL
+  - AMZN
+  - NVDA
+  - META
+  - TSLA
+  - SPY
+
+data:
+  timeframe: "1Day"          # bar size: 1Min, 5Min, 15Min, 1Hour, 1Day
+  lookback_days: 400         # history pulled for indicators / warm-up
+  feed: iex                  # market-data feed: iex (free) or sip (paid subscription)
+  db_path: "logs/market_data.db"
+
+strategy:
+  active: trend              # "trend" or "mean_reversion" (switchable)
+  allow_short: false         # if false, short signals (-1) are treated as flat (0)
+  trend:
+    fast_window: 20          # fast moving average window
+    slow_window: 50          # slow moving average window
+  mean_reversion:
+    lookback: 20             # rolling window for mean / std
+    entry_z: 2.0             # |z| above which we enter
+    exit_z: 0.5              # |z| below which we exit to flat
+
+risk:
+  max_position_pct: 0.15     # max fraction of equity per single asset
+  max_gross_exposure: 1.0    # max total notional / equity (1.0 = no leverage)
+  max_positions: 10          # max simultaneous open positions
+  stop_loss_pct: 0.05        # exit if position loses this fraction
+  take_profit_pct: 0.10      # exit if position gains this fraction
+
+execution:
+  order_type: market         # "market" or "limit"
+  time_in_force: day         # day | gtc | ioc | fok
+  limit_slippage_pct: 0.001  # for limit orders: offset from last price
+
+backtest:
+  start: "2023-01-01"
+  end: "2024-12-31"
+  initial_cash: 100000
