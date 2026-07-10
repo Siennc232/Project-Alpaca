@@ -9,6 +9,8 @@ bars) and **paper** (live Alpaca paper account).
 > ⚠️ **Paper trading only.** This project never uses real money and requires no
 > credit card. All orders are routed to Alpaca's paper environment
 > (`https://paper-api.alpaca.markets`).
+>
+> ## **Video link** :https://drive.google.com/file/d/1m76dOwuyyol3NHctnbqU-XukMIfxjEzw/view?usp=sharing
 
 ---
 
